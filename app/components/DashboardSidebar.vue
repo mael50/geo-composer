@@ -79,11 +79,46 @@
             </div>
         </div>
 
-        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 space-y-3">
             <UButton block size="lg" icon="i-heroicons-arrow-down-tray" :disabled="selectedCount === 0"
                 @click="$emit('download')" color="success" variant="solid">
                 Exporter GeoJSON
             </UButton>
+
+            <UModal title="À propos de Geo Composer" description="Outil de création de zones géographiques">
+                <UButton block color="neutral" variant="ghost" icon="i-heroicons-information-circle" size="sm">
+                    Informations
+                </UButton>
+
+                <template #body>
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                            <strong>Geo Composer</strong> simplifie la création de zones de chalandise.
+                            Chargez un département, sélectionnez vos communes (clic ou mode pinceau), et exportez votre
+                            fichier <strong>GeoJSON</strong> prêt à l'emploi.
+                        </p>
+
+                        <div
+                            class="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-2 rounded border border-gray-100 dark:border-gray-800">
+                            <div class="flex items-center gap-1">
+                                <UIcon name="i-heroicons-cpu-chip" />
+                                <span>Powered by Nuxt 4 & Leaflet</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <UIcon name="i-heroicons-user" />
+                                <span>Développé par Maël Laroque</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template #footer>
+                    <UButton to="https://github.com/mael50/geo-composer" target="_blank" block color="neutral"
+                        variant="solid" icon="i-lucide-github">
+                        Consulter le dépôt GitHub
+                    </UButton>
+                </template>
+            </UModal>
         </div>
     </aside>
 </template>
