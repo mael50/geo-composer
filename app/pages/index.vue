@@ -243,12 +243,29 @@ const clearSelection = () => {
 
 const downloadGeoJson = () => {
     if (selectedFeaturesMap.size === 0) return
-    const features = Array.from(selectedFeaturesMap.values())
+
+    // Deep clone to remove Vue Reactivity/Proxies
+    const features = Array.from(selectedFeaturesMap.values()).map(f => JSON.parse(JSON.stringify(f)))
+
     try {
-        let merged: any = features[0]
-        for (let i = 1; i < features.length; i++) {
-            merged = turf.union(merged, features[i])
+        if (features.length === 0) return
+
+        let merged: any
+
+        if (features.length === 1) {
+            merged = features[0]
+        } else {
+            // Turf v7 prefers handling a FeatureCollection for union
+            // This also handles multiple polygons much more efficiently than iterative union
+            const fc = turf.featureCollection(features)
+            // Cast to any because turf generic types can be finicky with inferred unions
+            merged = turf.union(fc as any)
         }
+
+        if (!merged) {
+            throw new Error('La fusion a retourné un résultat vide')
+        }
+
         const result = { type: 'FeatureCollection', features: [merged] }
         const blob = new Blob([JSON.stringify(result)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
@@ -258,8 +275,9 @@ const downloadGeoJson = () => {
         a.click()
         URL.revokeObjectURL(url)
         toast.add({ title: 'Export', description: 'Fichier GeoJSON généré avec succès' })
-    } catch (e) {
-        toast.add({ title: 'Erreur', description: 'Erreur lors de la fusion', color: 'error' })
+    } catch (e: any) {
+        console.error('Merge error:', e)
+        toast.add({ title: 'Erreur', description: 'Erreur lors de la fusion: ' + (e.message || 'Inconnue'), color: 'error' })
     }
 }
 

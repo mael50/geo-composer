@@ -36,9 +36,17 @@ onMounted(async () => {
                 maxZoom: 20
             }).addTo(map)
 
-            map.on('mousedown', () => { isMouseDown = true })
-            map.on('mouseup', () => { isMouseDown = false })
-            map.on('mouseout', () => { isMouseDown = false })
+            // Disable default map interactions while brushing
+            // (Handled by watcher below)
+
+            map.on('mousedown', () => { isMouseDown = true }) // Keep track purely for safety if needed, though mostly stateless handled now
+
+            // Apply initial brush state if active
+            if (props.brushMode) {
+                map.dragging.disable()
+                map.boxZoom.disable()
+                map.getContainer().style.cursor = 'crosshair'
+            }
 
             updateLayer()
 
@@ -46,6 +54,9 @@ onMounted(async () => {
             map.invalidateSize()
         }
     }, 100)
+
+    // Global listener for robust mouse handling
+    // We don't need 'mouseup' if we check e.buttons on mouseover
 })
 
 onUnmounted(() => {
@@ -59,9 +70,12 @@ watch(() => props.brushMode, (val) => {
     if (map) {
         if (val) {
             map.dragging.disable()
+            // Disable box zoom to prevent shift-drag conflicts
+            map.boxZoom.disable()
             map.getContainer().style.cursor = 'crosshair'
         } else {
             map.dragging.enable()
+            map.boxZoom.enable()
             map.getContainer().style.cursor = ''
         }
     }
@@ -108,18 +122,30 @@ const updateLayer = () => {
                 }
             })
 
-            // Brush handler
-            layer.on('mouseover', () => {
-                if (props.brushMode && isMouseDown) {
+            // Brush handler using native buttons state (stateless and robust)
+            layer.on('mouseover', (e: any) => {
+                const isLeftButtonDown = e.originalEvent.buttons === 1
+                if (props.brushMode && isLeftButtonDown) {
+                    // Prevent text selection while dragging
+                    e.originalEvent.preventDefault()
                     emit('toggle-commune', feature, true) // Force select on drag
                 }
             })
+
             // Mouse down on feature starts painting immediately
-            layer.on('mousedown', () => {
+            layer.on('mousedown', (e: any) => {
                 if (props.brushMode) {
                     emit('toggle-commune', feature, true)
+                    // Prevent map drag propagation or other side effects
+                    // IMPORTANT: Must stop propagation on the ORIGINAL DOM event
+                    const originalEvent = e.originalEvent
+                    if (originalEvent) {
+                        L.DomEvent.stopPropagation(originalEvent)
+                        L.DomEvent.preventDefault(originalEvent)
+                    }
                 }
             })
+
             // Tooltip with name
             layer.bindTooltip(`${feature.properties.nom} (${feature.properties.code})`)
         }
