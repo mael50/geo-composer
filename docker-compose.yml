@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3008:3008"
+    environment:
+      - NUXT_PORT=3008
+      - NUXT_HOST=0.0.0.0
+    restart: unless-stopped
